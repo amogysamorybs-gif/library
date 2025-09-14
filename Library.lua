@@ -1,12 +1,6 @@
 local cloneref = (cloneref or clonereference or function(instance: any)
     return instance
 end)
-
-pcall(function()
-    local RealInstance = cloneref(Instance)
-    getgenv().Instance = RealInstance
-    _G.Instance = RealInstance
-end)
 local CoreGui: CoreGui = cloneref(game:GetService("CoreGui"))
 local Players: Players = cloneref(game:GetService("Players"))
 local RunService: RunService = cloneref(game:GetService("RunService"))
@@ -6595,3 +6589,4 @@ Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
 getgenv().Library = Library
 
 return Library
+
