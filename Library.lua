@@ -1,27 +1,58 @@
-local cloneref = (cloneref or clonereference or function(instance: any)
-    return instance
-end)
-
-local ProtectedInstance = cloneref(Instance)
-local OldInstanceNew = ProtectedInstance.new
-
-Instance.new = function(...)
-    local success, result = pcall(OldInstanceNew, ...)
-    
-    if success then
-        return result
-    else
-        return game:GetService("CoreGui").Parent.Instance.new(...)
+local function safeCloneRef(obj)
+    if cloneref then
+        local success, result = pcall(cloneref, obj)
+        if success then return result end
     end
+    if clonereference then
+        local success, result = pcall(clonereference, obj)  
+        if success then return result end
+    end
+    return obj
 end
-local CoreGui: CoreGui = cloneref(game:GetService("CoreGui"))
-local Players: Players = cloneref(game:GetService("Players"))
-local RunService: RunService = cloneref(game:GetService("RunService"))
-local SoundService: SoundService = cloneref(game:GetService("SoundService"))
-local UserInputService: UserInputService = cloneref(game:GetService("UserInputService"))
-local TextService: TextService = cloneref(game:GetService("TextService"))
-local Teams: Teams = cloneref(game:GetService("Teams"))
-local TweenService: TweenService = cloneref(game:GetService("TweenService"))
+
+local RealInstance = safeCloneRef(Instance)
+
+local function NewInstance(className, parent)
+    local obj
+    
+    local success1, result1 = pcall(function()
+        return RealInstance.new(className)
+    end)
+    
+    if success1 and typeof(result1) ~= "table" then
+        obj = result1
+    else
+        local success2, result2 = pcall(function()
+            return game.Instance.new(className)
+        end)
+        
+        if success2 then
+            obj = result2
+        else
+            obj = game:GetService("CoreGui").Parent.Instance.new(className)
+        end
+    end
+    
+    if parent and obj then
+        obj.Parent = parent
+    end
+    
+    return obj
+end
+
+Instance = setmetatable({
+    new = NewInstance
+}, {
+    __index = RealInstance
+})
+local CoreGui: CoreGui = safeCloneRef(game:GetService("CoreGui"))
+local Players: Players = safeCloneRef(game:GetService("Players"))
+local RunService: RunService = safeCloneRef(game:GetService("RunService"))
+local SoundService: SoundService = safeCloneRef(game:GetService("SoundService"))
+local UserInputService: UserInputService = safeCloneRef(game:GetService("UserInputService"))
+local TextService: TextService = safeCloneRef(game:GetService("TextService"))
+local Teams: Teams = safeCloneRef(game:GetService("Teams"))
+local TweenService: TweenService = safeCloneRef(game:GetService("TweenService"))
 
 local getgenv = getgenv or function()
     return shared
@@ -6601,3 +6632,4 @@ Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
 
 getgenv().Library = Library
 return Library
+
