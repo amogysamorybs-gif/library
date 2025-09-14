@@ -445,7 +445,7 @@ local function ApplyTextScale(TextSize)
 end
 
 local function WaitForEvent(Event, Timeout, Condition)
-    local Bindable = (pcall(Instance.new, "BindableEvent") and Instance.new("BindableEvent")) or game:GetService("CoreGui").Parent.Instance.new("BindableEvent")
+    local Bindable = New("BindableEvent", {})
     local Connection = Event:Once(function(...)
         if not Condition or typeof(Condition) == "function" and Condition(...) then
             Bindable:Fire(true)
@@ -6648,5 +6648,6 @@ Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
 
 getgenv().Library = Library
 return Library
+
 
 
