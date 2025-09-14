@@ -23,18 +23,28 @@ local function NewInstance(className, parent)
         obj = result1
     else
         local success2, result2 = pcall(function()
-            return game.Instance.new(className)
+            return game:FindFirstChild("CoreGui").Parent.Instance.new(className)
         end)
         
-        if success2 then
+        if success2 and typeof(result2) ~= "table" then
             obj = result2
         else
-            obj = game:GetService("CoreGui").Parent.Instance.new(className)
+            local success3, result3 = pcall(function()
+                return workspace.Parent.Instance.new(className)
+            end)
+            
+            if success3 and typeof(result3) ~= "table" then
+                obj = result3
+            else
+                obj = RealInstance.new(className) -- форсируем оригинальный
+            end
         end
     end
     
     if parent and obj then
-        obj.Parent = parent
+        pcall(function()
+            obj.Parent = parent
+        end)
     end
     
     return obj
@@ -435,7 +445,7 @@ local function ApplyTextScale(TextSize)
 end
 
 local function WaitForEvent(Event, Timeout, Condition)
-    local Bindable = Instance.new("BindableEvent")
+    local Bindable = (pcall(Instance.new, "BindableEvent") and Instance.new("BindableEvent")) or game:GetService("CoreGui").Parent.Instance.new("BindableEvent")
     local Connection = Event:Once(function(...)
         if not Condition or typeof(Condition) == "function" and Condition(...) then
             Bindable:Fire(true)
@@ -1062,20 +1072,26 @@ local function FillInstance(Table: { [string]: any }, Instance: GuiObject)
 end
 
 local function New(ClassName: string, Properties: { [string]: any }): any
-    local Instance = Instance.new(ClassName)
-
-    if Templates[ClassName] then
-        FillInstance(Templates[ClassName], Instance)
+    local success, newInstance = pcall(function()
+        return Instance.new(ClassName)
+    end)
+    
+    if not success then
+        warn("Failed to create instance: " .. tostring(ClassName) .. " - " .. tostring(newInstance))
+        return nil
     end
-    FillInstance(Properties, Instance)
-
+    
+    local CreatedInstance = newInstance
+    if Templates[ClassName] then
+        FillInstance(Templates[ClassName], CreatedInstance)
+    end
+    FillInstance(Properties, CreatedInstance)
     if Properties["Parent"] and not Properties["ZIndex"] then
         pcall(function()
-            Instance.ZIndex = Properties.Parent.ZIndex
+            CreatedInstance.ZIndex = Properties.Parent.ZIndex
         end)
     end
-
-    return Instance
+    return CreatedInstance
 end
 
 --// Main Instances \\-
@@ -1217,7 +1233,7 @@ function Library:GetKeyString(KeyCode: Enum.KeyCode)
 end
 
 function Library:GetTextBounds(Text: string, Font: Font, Size: number, Width: number?): (number, number)
-    local Params = Instance.new("GetTextBoundsParams")
+    local Params = New("GetTextBoundsParams", {})
     Params.Text = Text
     Params.RichText = true
     Params.Font = Font
@@ -6632,4 +6648,5 @@ Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
 
 getgenv().Library = Library
 return Library
+
 
