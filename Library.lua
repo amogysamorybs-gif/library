@@ -3,15 +3,15 @@ local cloneref = (cloneref or clonereference or function(instance: any)
 end)
 
 local ProtectedInstance = cloneref(Instance)
-local OldInstanceNew = Instance.new
-Instance.new = function(className)
-    local success, result = pcall(function()
-        return ProtectedInstance.new(className)
-    end)
+local OldInstanceNew = ProtectedInstance.new
+
+Instance.new = function(...)
+    local success, result = pcall(OldInstanceNew, ...)
+    
     if success then
         return result
     else
-        return OldInstanceNew(className)
+        return game:GetService("CoreGui").Parent.Instance.new(...)
     end
 end
 local CoreGui: CoreGui = cloneref(game:GetService("CoreGui"))
@@ -6600,7 +6600,4 @@ Library:GiveSignal(Teams.ChildAdded:Connect(OnTeamChange))
 Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
 
 getgenv().Library = Library
-
 return Library
-
-
